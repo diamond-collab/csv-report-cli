@@ -3,16 +3,18 @@ import pytest
 from reader import read_csv_files
 from report import build_report
 
-files = ['test_stats1.csv']
-report_name = 'clickbait'
-unknown_report = 'cli'
 
+@pytest.mark.parametrize(
+    'files, report_name',
+    [
+        (['test_stats1.csv'], 'clickbait'),
+        (['test_stats1.csv', 'stats2.csv'], 'clickbait'),
+    ],
+)
+def test_build_report_filters_and_sorts_clickbait_rows(files, report_name):
+    rows = read_csv_files(files)
 
-def test_build_report_filters_and_sorts_clickbait_rows():
-    all_rows = read_csv_files(files)
-    assert len(all_rows) > 0
-
-    report_rows = build_report(report_name, all_rows)
+    report_rows = build_report(report_name, rows)
     assert isinstance(report_rows, list)
     assert len(report_rows) > 0
     assert isinstance(report_rows[0], dict)
@@ -29,9 +31,16 @@ def test_build_report_filters_and_sorts_clickbait_rows():
         assert report_rows[idx]['ctr'] >= report_rows[idx + 1]['ctr']
 
 
-def test_build_report_raises_for_unknown_report():
+@pytest.mark.parametrize(
+    'files, unknown_report',
+    [
+        (['test_stats1.csv'], 'cli'),
+        (['test_stats1.csv'], 'unknown'),
+        (['test_stats1.csv'], 'fake_report'),
+    ],
+)
+def test_build_report_raises_for_unknown_report(files, unknown_report):
     all_rows = read_csv_files(files)
-    assert len(all_rows) > 0
 
     with pytest.raises(ValueError, match=f'Неизвестный тип отчета {unknown_report}'):
         build_report(unknown_report, all_rows)
